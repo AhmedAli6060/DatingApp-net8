@@ -1,3 +1,24 @@
-.dropdown-toggle, .dropdown-item,.navbar-nav li a{
-    cursor: pointer;
+.dropdown-toggle,
+.dropdown-item,
+.navbar-nav li a {
+  cursor: pointer;
+}
+
+.active {
+  text-decoration: none;
+  padding-bottom: 2px;
+  display: inline-flex;
+  flex-direction: column; /* Stack text and underline vertically */
+  align-items: center; /* Center align underline with text */
+  text-decoration: none;
+  position: relative;
+}
+
+
+.active::after {
+  content: "";
+  width: 80%; /* Custom underline width */
+  height: 2px; /* Underline thickness */
+  background-color: #ff0000b2; /* Underline color */
+  margin-top: 2px; /* Space between text and underline */
 }
