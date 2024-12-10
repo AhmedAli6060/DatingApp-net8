@@ -1,47 +1,59 @@
 using API.Data;
+using API.DTOs;
 using API.Entities;
+using API.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
 {
-    public class UsersController(DataContext context) : BaseApiController
+    [Authorize]
+    public class UsersController(IUserRepository userRepository) : BaseApiController
     {
 
         #region  Methods
 
-        [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AppUser>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
         {
-            var users = await context.Users.ToListAsync();
-            return Ok(new { users });
+            var users = await userRepository.GetMembersAsync();
+            return Ok(users);
         }
 
-        [Authorize]
-        [HttpGet("{id}")]
-        public async Task<ActionResult<AppUser>> GetUser(int id)
-        {
-            var user = await context.Users.FindAsync(id);
-            if (user is null)
-                return NotFound($"User with id {id} not exist");
+        // [HttpGet("{id}")]
+        // public async Task<ActionResult<AppUser>> GetUser(int id)
+        // {
+        //     var user = await userRepository.GetUserByIdAsync(id);
+        //     if (user is null)
+        //         return NotFound($"User with id {id} not exist");
 
-            return Ok(new { user });
+        //     return Ok(new { user });
+        // }
+
+        [HttpGet("{username}")]
+        public async Task<ActionResult<MemberDto>> GetUser(string username)
+        {
+            var user = await userRepository.GetMemberAsync(username);
+            if (user is null)
+                return NotFound($"User with name {username} not exist");
+
+            return Ok(user);
         }
 
         [HttpPost]
-        public ActionResult<AppUser> AddUser(AppUser model)
+        public async Task<ActionResult<AppUser>> AddUser(AppUser model)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest("Invalid data");
 
-                context.Users.Add(model);
-                context.SaveChanges();
+                userRepository.Add(model);
+                await userRepository.SaveAllAsync();
 
-                var recentlyAdded = context.Users.Find(model.Id);
+                var recentlyAdded = await userRepository.GetUserByIdAsync(model.Id);
                 return Ok(new { recentlyAdded });
             }
             catch (Exception ex)
@@ -56,13 +68,13 @@ namespace API.Controllers
         {
             try
             {
-                var user = await context.Users.FindAsync(id);
+                var user = await userRepository.GetUserByIdAsync(id);
                 if (user is null)
                     return NotFound("user not found");
 
                 user.UserName = model.UserName;
-                context.Update(user);
-                await context.SaveChangesAsync();
+                userRepository.Update(user);
+                await userRepository.SaveAllAsync();
 
                 return Ok(new { user });
             }
@@ -77,12 +89,12 @@ namespace API.Controllers
         {
             try
             {
-                var user = await context.Users.FindAsync(id);
+                var user = await userRepository.GetUserByIdAsync(id);
                 if (user is null)
                     return NotFound("user not found");
 
-                context.Remove(user);
-                await context.SaveChangesAsync();
+                userRepository.Delete(user);
+                await userRepository.SaveAllAsync();
                 return Ok("User deleted");
             }
             catch (Exception ex)
