@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using API.Data;
 using API.DTOs;
 using API.Entities;
@@ -10,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace API.Controllers
 {
     [Authorize]
-    public class UsersController(IUserRepository userRepository) : BaseApiController
+    public class UsersController(IUserRepository userRepository, IMapper mapper) : BaseApiController
     {
 
         #region  Methods
@@ -21,16 +22,6 @@ namespace API.Controllers
             var users = await userRepository.GetMembersAsync();
             return Ok(users);
         }
-
-        // [HttpGet("{id}")]
-        // public async Task<ActionResult<AppUser>> GetUser(int id)
-        // {
-        //     var user = await userRepository.GetUserByIdAsync(id);
-        //     if (user is null)
-        //         return NotFound($"User with id {id} not exist");
-
-        //     return Ok(new { user });
-        // }
 
         [HttpGet("{username}")]
         public async Task<ActionResult<MemberDto>> GetUser(string username)
@@ -54,7 +45,7 @@ namespace API.Controllers
                 await userRepository.SaveAllAsync();
 
                 var recentlyAdded = await userRepository.GetUserByIdAsync(model.Id);
-                return Ok(new { recentlyAdded });
+                return Ok(recentlyAdded);
             }
             catch (Exception ex)
             {
@@ -62,27 +53,54 @@ namespace API.Controllers
             }
         }
 
-
-        [HttpPut("{id}")]
-        public async Task<ActionResult> EditUser(int id, AppUser model)
+        [HttpPut]
+        public async Task<ActionResult> UpdateUser(MemberUpdateDto model)
         {
             try
             {
-                var user = await userRepository.GetUserByIdAsync(id);
-                if (user is null)
-                    return NotFound("user not found");
+                var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (username is null) return BadRequest("No username found in token");
 
-                user.UserName = model.UserName;
-                userRepository.Update(user);
-                await userRepository.SaveAllAsync();
+                var user = await userRepository.GetUserByUserNameAsync(username);
 
-                return Ok(new { user });
+                if (user is null) return BadRequest("Could not find user");
+
+                mapper.Map(model, user);
+                if(await userRepository.SaveAllAsync()) return NoContent();
+
+                return BadRequest("Failed to update the user");
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
         }
+
+        // [HttpPut("{id}")]
+        // public async Task<ActionResult> EditUser(int id, MemberDto model)
+        // {
+        //     try
+        //     {
+        //         var user = await userRepository.GetUserByIdAsync(id);
+        //         if (user is null)
+        //             return NotFound("user not found");
+
+        //         //user.UserName = model.UserName;
+        //         user.Introduction = model.Introduction;
+        //         user.LookingFor = model.LookingFor;
+        //         user.Interests=model.Interests;
+        //         user.City=model.City;
+        //         user.Country=model.Country;
+        //         userRepository.Update(user);
+        //         await userRepository.SaveAllAsync();
+
+        //         return Ok(user);
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         return BadRequest(ex.Message);
+        //     }
+        // }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
