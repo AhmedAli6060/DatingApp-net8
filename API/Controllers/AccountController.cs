@@ -24,21 +24,6 @@ public class AccountController(DataContext context, ITokenService tokenService) 
             if (await UserExists(registerDto.username))
                 return BadRequest($"username is taken");
             return Ok();
-            // using var hmac = new HMACSHA512();
-            // var user = new AppUser()
-            // {
-            //     UserName = registerDto.username.ToLower(),
-            //     PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.password)),
-            //     PasswordSalt = hmac.Key
-            // };
-
-            // context.Users.Add(user);
-            // await context.SaveChangesAsync();
-            // return new UserDto
-            // {
-            //     Username = user.UserName,
-            //     Token = tokenService.CreateToken(user)
-            // };
         }
         catch (Exception ex)
         {
@@ -54,7 +39,9 @@ public class AccountController(DataContext context, ITokenService tokenService) 
             if (string.IsNullOrWhiteSpace(loginDto.Username) || string.IsNullOrWhiteSpace(loginDto.Password))
                 return BadRequest("Invalid data");
 
-            var user = await context.Users.FirstOrDefaultAsync(x => x.UserName.ToLower() == loginDto.Username.ToLower());
+            var user = await context.Users
+                                    .Include(p=>p.Photos)
+                                    .FirstOrDefaultAsync(x => x.UserName.ToLower() == loginDto.Username.ToLower());
 
             if (user is null) return Unauthorized("Invalid username.");
 
@@ -69,7 +56,8 @@ public class AccountController(DataContext context, ITokenService tokenService) 
             return new UserDto
             {
                 Username = user.UserName,
-                Token = tokenService.CreateToken(user)
+                Token = tokenService.CreateToken(user),
+                PhotoUrl = user.Photos.FirstOrDefault(x=>x.IsMain)?.Url
             };
         }
         catch (Exception ex)
