@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RegisterComponent } from "../register/register.component";
+import { AccountService } from '../_Services/account.service';
 
 @Component({
   selector: 'app-home',
@@ -9,8 +10,14 @@ import { RegisterComponent } from "../register/register.component";
   styleUrl: './home.component.css',
 })
 export class HomeComponent  {
+  private accountService = inject(AccountService);
   registerMode = false;
+  
+  isLoggedIn(){
+    return this.accountService.currentUser()?.token ? true : false;
+  }
 
+  
   registerToggle() {
     this.registerMode = !this.registerMode;
   }

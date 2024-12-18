@@ -2,6 +2,7 @@ using System.Security.Claims;
 using API.DTOs;
 using API.Entities;
 using API.Extensions;
+using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -108,6 +109,8 @@ namespace API.Controllers
                 PublicId = result.PublicId
             };
 
+            if(user.Photos.Count == 0) photo.IsMain = true;
+            
             user.Photos.Add(photo);
 
             if (await userRepository.SaveAllAsync())

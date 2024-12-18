@@ -5,12 +5,13 @@ using API.Data;
 using API.DTOs;
 using API.Entities;
 using API.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers;
 
-public class AccountController(DataContext context, ITokenService tokenService) : BaseApiController
+public class AccountController(DataContext context, ITokenService tokenService, IMapper mapper) : BaseApiController
 {
 
     [HttpPost("register")] //account/register
@@ -18,12 +19,24 @@ public class AccountController(DataContext context, ITokenService tokenService) 
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(registerDto.username) || string.IsNullOrWhiteSpace(registerDto.password))
-                return BadRequest("Invalid data");
+            if (!ModelState.IsValid) return BadRequest("Invalid data");
 
-            if (await UserExists(registerDto.username))
-                return BadRequest($"username is taken");
-            return Ok();
+            if (await UserExists(registerDto.Username)) return BadRequest($"username is taken");
+
+            using var hmac = new HMACSHA512();
+            var user =mapper.Map<AppUser>(registerDto);
+            user.UserName = registerDto.Username.ToLower();
+            user.PasswordHash=hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
+            user.PasswordSalt=hmac.Key;
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            return new UserDto{
+                Username=user.UserName,
+                Token = tokenService.CreateToken(user),
+                KnownAs = user.KnownAs
+            };
+
         }
         catch (Exception ex)
         {
@@ -40,7 +53,7 @@ public class AccountController(DataContext context, ITokenService tokenService) 
                 return BadRequest("Invalid data");
 
             var user = await context.Users
-                                    .Include(p=>p.Photos)
+                                    .Include(p => p.Photos)
                                     .FirstOrDefaultAsync(x => x.UserName.ToLower() == loginDto.Username.ToLower());
 
             if (user is null) return Unauthorized("Invalid username.");
@@ -56,8 +69,9 @@ public class AccountController(DataContext context, ITokenService tokenService) 
             return new UserDto
             {
                 Username = user.UserName,
+                KnownAs=user.KnownAs,
                 Token = tokenService.CreateToken(user),
-                PhotoUrl = user.Photos.FirstOrDefault(x=>x.IsMain)?.Url
+                PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url
             };
         }
         catch (Exception ex)
