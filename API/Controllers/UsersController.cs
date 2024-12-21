@@ -17,9 +17,11 @@ namespace API.Controllers
         #region  Methods
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers([FromQuery]UserParams userParams)
         {
-            var users = await userRepository.GetMembersAsync();
+            userParams.CurrentUserName = User.GetUserName();
+            var users = await userRepository.GetMembersAsync(userParams);
+            Response.AddPaginationHeader(users);
             return Ok(users);
         }
 
@@ -109,8 +111,8 @@ namespace API.Controllers
                 PublicId = result.PublicId
             };
 
-            if(user.Photos.Count == 0) photo.IsMain = true;
-            
+            if (user.Photos.Count == 0) photo.IsMain = true;
+
             user.Photos.Add(photo);
 
             if (await userRepository.SaveAllAsync())
