@@ -5,8 +5,10 @@ namespace API.Data;
 
 public class DataContext(DbContextOptions options) : DbContext(options)
 {
-    public required DbSet<AppUser> Users { get; set; }
-    public required DbSet<UserLike> Likes { get; set; }
+    public DbSet<AppUser> Users { get; set; }
+    public DbSet<UserLike> Likes { get; set; }
+    public DbSet<Message> Messages { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -22,10 +24,21 @@ public class DataContext(DbContextOptions options) : DbContext(options)
                 .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<UserLike>()
-        .HasOne(t => t.TargetUser)
-        .WithMany(l => l.LikedByUsers)
-        .HasForeignKey(t => t.TargetUserId)
-        //.OnDelete(DeleteBehavior.NoAction);
-        .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(t => t.TargetUser)
+                .WithMany(l => l.LikedByUsers)
+                .HasForeignKey(t => t.TargetUserId)
+                //.OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+        builder.Entity<Message>()
+                .HasOne(x => x.Recipient)
+                .WithMany(x => x.MessagesReceived)
+                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Message>()
+                .HasOne(x => x.Sender)
+                .WithMany(x => x.MessagesSent)
+                .OnDelete(DeleteBehavior.Cascade);
     }
 }
