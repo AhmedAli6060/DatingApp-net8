@@ -17,7 +17,7 @@ namespace API.Controllers
         #region  Methods
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers([FromQuery]UserParams userParams)
+        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers([FromQuery] UserParams userParams)
         {
             userParams.CurrentUserName = User.GetUserName();
             var users = await userRepository.GetMembersAsync(userParams);
@@ -25,7 +25,7 @@ namespace API.Controllers
             return Ok(users);
         }
 
-        [HttpGet("{username}")]
+        [HttpGet("{username}")] // / api/users/2
         public async Task<ActionResult<MemberDto>> GetUser(string username)
         {
             var user = await userRepository.GetMemberAsync(username);
