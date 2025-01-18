@@ -23,20 +23,34 @@ public static class IdentityServiceExtensions
 
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                        .AddJwtBearer(options =>
+                    .AddJwtBearer(options =>
+                    {
+                        var tokenKey = config["TokenKey"] ?? throw new Exception("Token key not found");
+                        options.TokenValidationParameters = new TokenValidationParameters
                         {
-                            var tokenKey = config["TokenKey"] ?? throw new Exception("Token key not found");
-                            options.TokenValidationParameters = new TokenValidationParameters
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
+                            ValidateIssuer = false,
+                            ValidateAudience = false
+                        };
+                        options.Events = new JwtBearerEvents
+                        {
+                            OnMessageReceived = context =>
                             {
-                                ValidateIssuerSigningKey = true,
-                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
-                                ValidateIssuer = false,
-                                ValidateAudience = false
-                            };
-                        });
+                                var accessToken = context.Request.Query["access_token"];
+                                var path = context.HttpContext.Request.Path;
+                                if (!string.IsNullOrWhiteSpace(accessToken) && path.StartsWithSegments("/hubs"))
+                                {
+                                    context.Token = accessToken;
+                                }
+                                return Task.CompletedTask;
+                            }
+                        };
+                    });
+
         services.AddAuthorizationBuilder()
-        .AddPolicy("RequiredAdminRole",policy=>policy.RequireRole("Admin"))
-        .AddPolicy("ModeratoPhotoRole",policy=>policy.RequireRole("Admin","Moderator"));
+        .AddPolicy("RequiredAdminRole", policy => policy.RequireRole("Admin"))
+        .AddPolicy("ModeratoPhotoRole", policy => policy.RequireRole("Admin", "Moderator"));
 
         return services;
     }

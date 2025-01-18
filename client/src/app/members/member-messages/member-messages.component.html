@@ -1,10 +1,10 @@
 <div class="card">
   <div class="card-body">
-    @if(messages().length === 0){
+    @if(messageService.messageThread().length === 0){
     <p>No Messages Yet</p>
     }@else {
     <ul class="chat">
-      @for (message of messages(); track message.id) {
+      @for (message of messageService.messageThread(); track message.id) {
       <li>
         <div>
           <span class="chat-img float-end">
@@ -22,12 +22,9 @@
                 }}</span>
                 @if (!message.dateRead && message.senderUserName !== username())
                 {
-                <span class="text-danger">(unread)</span>
-                } @if (message.dateRead && message.senderUserName !==
-                username()) {
-                <span class="text-success"
-                  >(read {{ message.dateRead | timeago }})</span
-                >
+                <span class="text-danger"> (unread)</span>
+                } @if (message.dateRead && message.senderUserName !== username()) {
+                <span class="text-success"> (read {{ message.dateRead | timeago }})</span>
                 }
               </small>
             </div>
@@ -53,7 +50,13 @@
           placeholder="Send a private message"
         />
         <div class="input-group-append">
-          <button [disabled]="!messageForm.valid" type="submit" class="btn btn-primary">Send</button>
+          <button
+            [disabled]="!messageForm.valid"
+            type="submit"
+            class="btn btn-primary"
+          >
+            Send
+          </button>
         </div>
       </div>
     </form>

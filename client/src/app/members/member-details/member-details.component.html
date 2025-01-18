@@ -1,4 +1,3 @@
-
 <div class="row">
   <div class="col-4">
     <div class="card">
@@ -9,6 +8,12 @@
       />
 
       <div class="card-body">
+        @if(presenceService.onlineUsers().includes(member.userName))
+        {
+        <div class="mp-2">
+          <i class="fa fa-user-circle text-success"></i> Online now
+        </div>
+        }
         <div>
           <strong>Location:</strong>
           <p>{{ member.city }}, {{ member.country }}</p>
@@ -30,7 +35,9 @@
       <div class="card-footer">
         <div class="btn-group d-flex">
           <button class="btn btn-primary">Like</button>
-          <button (click)="selectTab('Messages')" class="btn btn-success">Messages</button>
+          <button (click)="selectTab('Messages')" class="btn btn-success">
+            Messages
+          </button>
         </div>
       </div>
     </div>
@@ -67,11 +74,8 @@
       <tab heading="Messages" (selectTab)="onTabActivated($event)">
         <app-member-messages
           [username]="member.userName"
-          [messages]="messages"
-          (updateMessages)="onUpdateMessages($event)"
         ></app-member-messages>
       </tab>
     </tabset>
   </div>
 </div>
-
