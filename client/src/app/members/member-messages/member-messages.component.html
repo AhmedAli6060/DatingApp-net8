@@ -3,7 +3,7 @@
     @if(messageService.messageThread().length === 0){
     <p>No Messages Yet</p>
     }@else {
-    <ul class="chat">
+    <ul class="chat" #scrollMe style="overflow: scroll;max-height: 500px;padding-right: 25px;scroll-behavior: smooth;">
       @for (message of messageService.messageThread(); track message.id) {
       <li>
         <div>
@@ -48,6 +48,7 @@
           type="text"
           class="form-control input-sm"
           placeholder="Send a private message"
+          autocomplete="off"
         />
         <div class="input-group-append">
           <button
