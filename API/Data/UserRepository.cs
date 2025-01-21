@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using API.DTOs;
 using API.Entities;
 using API.Helpers;
@@ -18,12 +14,17 @@ namespace API.Data
 
         public void Delete(AppUser user) => context.Remove(user);
 
-        public async Task<MemberDto?> GetMemberAsync(string username)
+        public async Task<MemberDto?> GetMemberAsync(string username, bool isCurrentUser)
         {
-            return await context.Users
-                    .Where(x => x.UserName == username)
-                    .ProjectTo<MemberDto>(mapper.ConfigurationProvider)
-                    .SingleOrDefaultAsync();
+            var query = context.Users
+                        .Where(x => x.UserName == username)
+                        .ProjectTo<MemberDto>(mapper.ConfigurationProvider)
+                        .AsQueryable();
+
+            if (isCurrentUser)
+                query = query.IgnoreQueryFilters();
+
+            return await query.FirstOrDefaultAsync();
         }
 
         public async Task<PagedList<MemberDto>> GetMembersAsync(UserParams userParams)
@@ -51,6 +52,14 @@ namespace API.Data
 
         public async Task<AppUser?> GetUserByIdAsync(int id) => await context.Users.FindAsync(id);
 
+        public async Task<AppUser?> GetUserByPhotoId(int photoId)
+        {
+            return await context.Users
+                    .Include(p => p.Photos)
+                    .IgnoreQueryFilters()
+                    .Where(p => p.Photos.Any(p => p.Id == photoId))
+                    .FirstOrDefaultAsync();
+        }
 
         public async Task<AppUser?> GetUserByUserNameAsync(string username) =>
                 await context.Users.Include(x => x.Photos).SingleOrDefaultAsync(x => x.UserName == username);
